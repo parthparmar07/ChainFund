@@ -192,3 +192,48 @@ async def get_campaign_progress(campaign_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get campaign progress: {str(e)}")
+
+
+@router.get("/categories")
+async def get_campaign_categories():
+    """Get all available campaign categories with counts"""
+    try:
+        collection = await get_collection("campaigns")
+        
+        # Get all campaigns and count by category
+        campaigns = await collection.find({}).to_list(length=None)
+        
+        # Count campaigns by category
+        category_counts = {}
+        for campaign in campaigns:
+            category = campaign.get("category", "Other")
+            category_counts[category] = category_counts.get(category, 0) + 1
+        
+        # Define category descriptions
+        category_descriptions = {
+            "Technology": "Blockchain, AI, and software projects",
+            "Healthcare": "Medical devices, telemedicine, and health tech",
+            "Environment": "Sustainable energy, water purification, and eco-projects",
+            "Education": "Learning platforms and educational technology",
+            "Agriculture": "Farming technology and food production",
+            "Gaming": "Blockchain gaming and metaverse projects",
+            "Logistics": "Supply chain and transportation optimization",
+            "Energy": "Renewable energy and trading platforms"
+        }
+        
+        # Build response
+        categories = []
+        for category, count in category_counts.items():
+            categories.append({
+                "name": category,
+                "count": count,
+                "description": category_descriptions.get(category, f"Projects in {category}")
+            })
+        
+        # Sort by count descending
+        categories.sort(key=lambda x: x["count"], reverse=True)
+        
+        return {"categories": categories}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get campaign categories: {str(e)}")
